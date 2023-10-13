@@ -1,3 +1,23 @@
+# Import necessary libraries
+library(tibble)
+
+#' Multiserver Queue System Simulation
+#'
+#' Simulate a multi-server queue system to determine each customer's transition times.
+#'
+#' @param Arrivals A vector of customer arrival times.
+#' @param ServiceTimes A vector of service times for each customer.
+#' @param NumServers The number of servers available in the queue system. Default is 1.
+#' 
+#' @return A tibble with columns: Arrivals, ServiceBegins, ChosenServer, and ServiceEnds.
+#' 
+#' @examples
+#' # Example usage:
+#' Arrivals <- c(1, 3, 5)
+#' ServiceTimes <- c(2, 2, 2)
+#' Multiserver(Arrivals, ServiceTimes, 2)
+#' 
+#' @export
 Multiserver <- function(Arrivals, ServiceTimes, NumServers = 1) {
   if (any(Arrivals <= 0 | ServiceTimes <= 0) || NumServers <= 0){
     stop("Arrivals, ServiceTimes must be positive & NumServers must be positive" )
@@ -5,34 +25,21 @@ Multiserver <- function(Arrivals, ServiceTimes, NumServers = 1) {
   if (length(Arrivals) != length(ServiceTimes)){
     stop("Arrivals and ServiceTimes must have the same length")
   }
-# Feed customers through a multiserver queue system to determine each  
-# customer's transition times.
-
-NumCust <- length(Arrivals)  #  number of customer arrivals
-# When each server is next available (this will be updated as the simulation proceeds):
-AvailableFrom <- rep(0, NumServers)
-# i.e., when the nth server will next be available
-
-# These variables will be filled up as the simulation proceeds:
-ChosenServer <- ServiceBegins <- ServiceEnds <- rep(0, NumCust)  
-
-# ChosenServer = which server the ith customer will use
-# ServiceBegins = when the ith customer's service starts
-# ServiceEnds = when the ith customer's service ends
-
-# This loop calculates the queue system's "Transitions by Customer":
-for (i in seq_along(Arrivals)){
-  # go to next available server
-  avail <-  min(AvailableFrom)
-  ChosenServer[i] <- which.min(AvailableFrom)
-  # service begins as soon as server & customer are both ready
-  ServiceBegins[i] <- max(avail, Arrivals[i])
-  ServiceEnds[i] <- ServiceBegins[i] + ServiceTimes[i]  
-  # server becomes available again after serving ith customer
-  AvailableFrom[ChosenServer[i]] <- ServiceEnds[i]
-}
-  out <- data.frame(Arrivals, ServiceBegins, ChosenServer, ServiceEnds)
+  
+  NumCust <- length(Arrivals)  #  number of customer arrivals
+  AvailableFrom <- rep(0, NumServers)  # when each server is next available
+  
+  ChosenServer <- ServiceBegins <- ServiceEnds <- rep(0, NumCust)  
+  
+  for (i in seq_along(Arrivals)){
+    avail <-  min(AvailableFrom)
+    ChosenServer[i] <- which.min(AvailableFrom)
+    ServiceBegins[i] <- max(avail, Arrivals[i])
+    ServiceEnds[i] <- ServiceBegins[i] + ServiceTimes[i]  
+    AvailableFrom[ChosenServer[i]] <- ServiceEnds[i]
+  }
+  
+  out <- tibble(Arrivals, ServiceBegins, ChosenServer, ServiceEnds)
   return(out)
 }
-
 
